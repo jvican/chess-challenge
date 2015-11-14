@@ -1,10 +1,23 @@
-package cpu.async
+package chess.async
 
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.language.implicitConversions
+import scala.concurrent.ExecutionContext
+import scala.language.{implicitConversions, postfixOps}
+import scalaz.concurrent._
 
-object AsyncChessSolver {
+trait ChessIO {
+  import java.io.{File, PrintWriter}
+
+  def printToFile(f: File)(op: PrintWriter => Unit) {
+    val p = new PrintWriter(f)
+    try { op(p) } finally { p.close() }
+  }
+
+  def randomFile =
+    File.createTempFile("asd", ".result")
+}
+
+object AsyncChessSolver extends ChessIO {
   sealed trait Piece {
     /** Assigned according to the number
       * of possible moves that are removed
@@ -33,8 +46,10 @@ object AsyncChessSolver {
     val difficulty = 1
 
     override def toString: String = "K"
-    @inline def isSafe(pos: Cell, target: Cell) =
-      !pos.diff(target).equal((1, 1))
+    @inline def isSafe(pos: Cell, target: Cell) = {
+      val d = pos.diff(target)
+      !(d.equal((1,0)) || d.equal((0, 1)) || d.equal((1, 1)))
+    }
   }
 
   case object Queen extends Piece {
@@ -63,20 +78,20 @@ object AsyncChessSolver {
     }
   }
 
-  implicit def tupleToCell(t: (Int, Int)): Cell = Cell(t)
+  type Cell = (Int, Int)
 
-  case class Cell(c: (Int, Int)) extends AnyVal {
+  implicit class RichCell(val c: Cell) extends AnyVal {
     @inline def row = c._1
     @inline def col = c._2
     @inline def diff(c2: Cell): Cell =
-      (abs(row - c2.row), abs(col - c2.col))
+      (abs(c._1 - c2._1), abs(c._2 - c2._2))
     @inline def equal(c2: Cell): Boolean =
-      row == c2.row && col == c2.col
+      c._1 == c2._1 && c._2 == c2._2
     @inline def inRowOrCol(c2: Cell): Boolean =
-      row == c2.row || col == c2.col
+      c._1 == c2._1 || c._2 == c2._2
     @inline def inDiagonal(c2: Cell): Boolean = {
       val d = diff(c2)
-      d.row == d.col
+      d._1 == d._2
     }
   }
 
@@ -119,26 +134,48 @@ object AsyncChessSolver {
    * be defined here because the specification SIP-15 forbids it. */
   implicit class RichDecision(val d: Decision) extends AnyVal {
     @inline def add(m: Move): Decision = m :: d.l
-    @inline def isNotVisited(mem: Visited): Boolean = !mem.contains(d)
 
     /* Checking for each piece if the new move is possible.*/
-    @inline def isValidPosition(target: Move) = d.l forall { m =>
-      m.cell != target.cell &&
-        m.piece.isSafe(m.cell, target.cell) &&
-        /* This check is needed since the target piece may
-         * be a different one from the others in the board.*/
-        target.piece.isSafe(target.cell, m.cell)
+    @inline def isValidPosition = {
+      val target = d.l.head
+      d.l.tail forall { m =>
+        m._1.isSafe(m._2, target._2) &&
+          /* This check is needed since the target piece may
+           * be a different one from the others in the board.*/
+          target._1.isSafe(target._2, m._2) &&
+            m._2 != target._2
+      }
+    }
+
+    override def toString: String = d.l.mkString(" - ")
+
+    /* Print a decision in a pretty way, but it is a very
+     * expensive operation. By default, use another representation. */
+    def prettyPrint(b: Board): String = {
+      val cells: Map[Cell, String] =
+        d.l.map(d => d._2 -> d._1.toString).toMap
+
+      "\n" + genCells(b.n, b.m).map(c => (c, cells.getOrElse(c, " ")))
+        .foldLeft("")(
+          (acc: String, t: (Cell, String)) => {
+            val end = if(t._1.col == b.m) "|\n" else ""
+            acc + "|" + t._2 + end
+          }
+        )
     }
   }
 
-  implicit class TrieMapLikeSet[T](val m: TrieMap[T, T]) extends AnyVal {
-    @inline def contains(k: T): Boolean = m.contains(k)
-    @inline def +=(e: T): Unit = m += ((e, e))
+  val inhabitable = 0.toByte
+
+  implicit class TrieMapLikeSet[T](val m: TrieMap[T, Byte]) extends AnyVal {
+    /* Return if a element is in the set. Thread-safe operation. */
+    @inline def containsOrPut(e: T): Boolean =
+      m.putIfAbsent(e, inhabitable).isEmpty
   }
 
   object TrieMapLikeSet {
     def empty[T]: TrieMapLikeSet[T] =
-      TrieMapLikeSet(TrieMap.empty[T, T])
+      TrieMapLikeSet(TrieMap.empty[T, Byte])
   }
 
   type Visited = TrieMapLikeSet[Decision]
@@ -149,11 +186,11 @@ object AsyncChessSolver {
     for {
       decision <- i
       cell <- genCells(d.n, d.m)
-      move = (p, cell)
-      nextDecision = decision add move
-      if (decision isValidPosition move) &&
-        (nextDecision isNotVisited mem)
-    } yield { mem += nextDecision; nextDecision}
+      nextDecision = decision add (p, cell)
+      /* Order of the conditions matter, don't modify */
+      if  (nextDecision isValidPosition) &&
+          (mem containsOrPut nextDecision)
+    } yield nextDecision
 
   def onlyPieces(ps: (Int, Piece)) =
     Iterator.tabulate(ps._1)(_ => ps._2)
@@ -162,50 +199,64 @@ object AsyncChessSolver {
   def genCells(n: Int, m: Int): Iterator[Cell] = for {
     r <- Iterator.range(1, n + 1)
     c <- Iterator.range(1, m + 1)
-  } yield Cell(r, c)
+  } yield (r, c)
 
-  def seed(p: Piece, d: Board) =
-    genCells(d.n, d.m).map[Decision]{
-      c => List(p -> c)
-    }
+  def colCells(n: Int, m: Int): Iterator[Cell] = for {
+    c <- Iterator.range(1, m + 1)
+  } yield (n, c)
+
+  def seed(p: Piece, row: Int, m: Int): Iterator[Decision] =
+    colCells(row, m).map[Decision](c => List(p -> c))
 
   type ChessGroup = (Int, Piece)
   type ChessGroups = Seq[ChessGroup]
 
-  def solve(cg: ChessGroups, dim: Board)
-           (implicit ec: ExecutionContext): Future[Vector[Decision]] = {
-    val pieces = expand(cg).sortBy(_.difficulty)
+  import java.io.File
+
+  def solve(cg: ChessGroups, b: Board)
+           (implicit ec: ExecutionContext): Future[Int] = {
+    val pieces = expand(cg).sortBy(_.difficulty).reverse
     val mem = TrieMapLikeSet.empty[Decision]
-    val seeds = Vector.range(1, dim.n + 1) map ( i => Future {
-      pieces.tail.foldLeft(seed(pieces.head, (i, dim.m))) {
+    val files = TrieMap.empty[Cell, File]
+
+    import java.io.PrintWriter
+    val seeds = Vector.range(1, b.n + 1) map (r => Future {
+      //val cell = (r, c.col)
+      val outputFile = randomFile
+      //files.put(cell, outputFile)
+      val p = new PrintWriter(outputFile)
+      p.println(s"This is thread with assigned row $r")
+      val res = pieces.tail.foldLeft(seed(pieces.head, r, b.m)) {
         (decisions, piece) =>
-          decide(decisions, piece, mem, dim)
-      }.toVector
+          decide(decisions, piece, mem, b)
+      }.map(d => {p.println(d); d}).foldLeft(0) (
+        (acc: Int, _: Decision) => acc + 1
+      )
+      p.close()
+      res
     })
-    Future.fold(seeds)(Vector.empty[Decision])(_ ++ _)
+
+    Future.gatherUnordered(seeds).map(_.sum)
   }
 }
 
 object ChessApp extends App {
 
   import AsyncChessSolver._
-  val problem = Vector((7, Queen))
-  val board = (7, 9)
+  //val problem = Vector((2, King), (2, Queen), (2, Bishop), (1, Knight))
+  val problem = Vector((2, King), (2, Queen))
+  val board = (7, 7)
 
   import scala.concurrent.ExecutionContext.Implicits.global
-  import scala.concurrent.duration._
+
 
   val start = System.currentTimeMillis()
   val solutions = solve(problem, board)
 
+  val numSolutions = solutions.run
+  val end = System.currentTimeMillis()
+  val runtime = end - start
 
-  val prints = solutions map { v =>
-    println(v mkString "\n")
-    println(s"Length: ${v.size}")
-    val end = System.currentTimeMillis()
-    val runtime = end - start
-    println(s"Runtime: $runtime")
-  }
-
-  Await.result(prints, Duration.Inf)
+  println(s"Number of solutions: $numSolutions")
+  println(s"Runtime: ${runtime}ms")
 }

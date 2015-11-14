@@ -1,9 +1,7 @@
-package cpu.async
+package chess.sync
 
 import org.scalacheck.Gen
-import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.time._
 import org.scalatest.{Matchers, PropSpec}
 
 /** This specification only checks that the results of the Solver
@@ -11,11 +9,10 @@ import org.scalatest.{Matchers, PropSpec}
   * This is due to the fact that boards and configurations are randomly
   * generated. Fine-grained testing has been done for the specific examples
   * in the challenge. */
-class AsyncChessSolverSpec extends PropSpec with PropertyChecks
-                                               with Matchers with ScalaFutures {
-  import AsyncChessSolver._
+class SyncChessSolverSpec extends PropSpec with PropertyChecks with Matchers {
+  import SyncChessSolver._
 
-  /** Checks that a vector of Decisions is a good solution for the problem. */
+  /* Checks that a vector of Decisions is a good solution for the problem. */
   def corrector(solutions: Vector[Decision]): Vector[Boolean] =
     solutions map { d2 =>
       d2.l.tails.filter(_.nonEmpty).forall{
@@ -45,18 +42,12 @@ class AsyncChessSolverSpec extends PropSpec with PropertyChecks
   implicit override val generatorDrivenConfig =
     PropertyCheckConfig(minSize = 10, maxSize = 10, minSuccessful = 10)
 
-  import scala.concurrent.ExecutionContext.Implicits.global
-
-  implicit val futuresPatienceConfig =
-    PatienceConfig(timeout = Span(60, Seconds), interval = Span(1, Seconds))
-
-  property("solve several chess problems") {
-    forAll(problemGen) {
+  property("solve several chess problems") {forAll(problemGen) {
       t =>
         val (groups, b) = t
         println(s"Groups $groups")
         println(s"Board ${b.n}, ${b.m}")
-        corrector(solve(groups, b).futureValue) foreach {
+        corrector(solve(groups, b).toVector) foreach {
           _ shouldBe true
         }
     }

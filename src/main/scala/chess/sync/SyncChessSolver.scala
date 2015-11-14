@@ -1,4 +1,4 @@
-package cpu.sync
+package chess.sync
 
 import scala.collection.mutable.{Set => MutableSet}
 import scala.language.implicitConversions
@@ -32,8 +32,10 @@ object SyncChessSolver {
     val difficulty = 1
 
     override def toString: String = "K"
-    @inline def isSafe(pos: Cell, target: Cell) =
-      !pos.diff(target).equal((1, 1))
+    @inline def isSafe(pos: Cell, target: Cell) = {
+      val d = pos.diff(target)
+      !(d.equal((1,0)) || d.equal((0, 1)) || d.equal((1, 1)))
+    }
   }
 
   case object Queen extends Piece {
@@ -141,7 +143,7 @@ object SyncChessSolver {
       move = (p, cell)
       nextDecision = decision add move
       if (decision isValidPosition move) &&
-        (nextDecision isNotVisited mem)
+         (nextDecision isNotVisited mem)
     } yield { mem += nextDecision; nextDecision}
 
   def onlyPieces(ps: (Int, Piece)) =
@@ -169,7 +171,7 @@ object SyncChessSolver {
    * latest state in each iteration. It is not immutable because
    * there is now way to share it with each independent iteration. */
   def solve(cg: ChessGroups, dim: Board): Iterator[Decision] = {
-    val pieces = expand(cg).sortBy(_.difficulty)
+    val pieces = expand(cg).sortBy(_.difficulty).reverse
     val mem = MutableSet.empty[Decision]
     pieces.tail.foldLeft(seed(pieces.head, dim)) {
       (decisions, piece) =>
@@ -180,22 +182,15 @@ object SyncChessSolver {
 
 object ChessApp extends App {
   import SyncChessSolver._
-  val problem = Vector((7, Queen))
-  val board = (7, 7)
+  val problem = Vector((8, Queen))
+  val board = (8, 8)
 
   val start = System.currentTimeMillis()
   val solutions = solve(problem, board).toVector
   val end = System.currentTimeMillis()
   val runtime = end - start
 
-  def corrector(solutions: Vector[Decision]): Vector[(Decision, Boolean)] =
-    solutions map { d2 =>
-      d2 -> d2.l.tails.filter(_.nonEmpty).forall{
-        l => l.tail.forall(m => m.piece.isSafe(m.cell, l.head.cell))
-      }
-    }
-
-  //println(corrector(solutions) mkString "\n")
-  println(s"Length: ${solutions.size}")
+  // println(solutions mkString "\n")
+  println(s"Size: ${solutions.size}")
   println(s"Runtime: $runtime")
 }
