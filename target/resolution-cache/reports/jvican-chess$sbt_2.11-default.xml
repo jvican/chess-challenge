@@ -7,7 +7,7 @@
 		revision="1.0"
 		conf="default"
 		confs="default"
-		date="20151112140433"/>
+		date="20151114114343"/>
 	<dependencies>
 		<module organisation="org.ensime" name="ensime-sbt">
 			<revision name="0.2.0" status="release" pubdate="20150910112908" resolver="sbt-chain" artresolver="sbt-chain" homepage="http://github.com/ensime/ensime-server" extra-scalaVersion="2.10" extra-sbtVersion="0.13" downloaded="false" searched="false" default="false" conf="default, compile, runtime, default(compile), master" position="53">

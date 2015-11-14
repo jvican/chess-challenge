@@ -4,7 +4,7 @@
 		module="chess$sbt_2.11"
 		revision="1.0"
 		status="integration"
-		publication="20151112140433"
+		publication="20151114114343"
 	/>
 	<configurations>
 		<conf name="default" visibility="public"/>

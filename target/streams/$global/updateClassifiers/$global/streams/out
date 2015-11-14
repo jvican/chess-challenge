@@ -9,7 +9,7 @@
 [debug] == resolving dependencies for jvican#chess$sources_javadoc_2.11;1.0 [compile]
 [debug] == resolving dependencies jvican#chess$sources_javadoc_2.11;1.0->org.scala-lang#scala-library;2.11.7 [compile->default(compile)]
 [info] Resolving org.scala-lang#scala-library;2.11.7 ...
-[debug] sbt-chain: Checking cache for: sbt.ivyint.MergedDescriptors@fc2150a
+[debug] sbt-chain: Checking cache for: sbt.ivyint.MergedDescriptors@6322e196
 [debug] sbt-chain: module revision found in cache: org.scala-lang#scala-library;2.11.7
 [debug] 	found org.scala-lang#scala-library;2.11.7 in sbt-chain
 [debug] 	[2.11.7] org.scala-lang#scala-library;2.11.7
@@ -45,7 +45,7 @@
 [debug] == resolving dependencies jvican#chess$sources_javadoc_2.11;1.0->org.scala-lang#scala-library;2.11.7 [test->master]
 [debug] == resolving dependencies jvican#chess$sources_javadoc_2.11;1.0->org.scalacheck#scalacheck_2.11;1.12.5 [test->default(compile)]
 [info] Resolving org.scalacheck#scalacheck_2.11;1.12.5 ...
-[debug] sbt-chain: Checking cache for: sbt.ivyint.MergedDescriptors@5fdade53
+[debug] sbt-chain: Checking cache for: sbt.ivyint.MergedDescriptors@1050b012
 [debug] sbt-chain: module revision found in cache: org.scalacheck#scalacheck_2.11;1.12.5
 [debug] 	found org.scalacheck#scalacheck_2.11;1.12.5 in sbt-chain
 [debug] == resolving dependencies jvican#chess$sources_javadoc_2.11;1.0->org.scalacheck#scalacheck_2.11;1.12.5 [test->runtime]
@@ -53,7 +53,7 @@
 [debug] == resolving dependencies jvican#chess$sources_javadoc_2.11;1.0->org.scalacheck#scalacheck_2.11;1.12.5 [test->master]
 [debug] == resolving dependencies jvican#chess$sources_javadoc_2.11;1.0->org.scala-sbt#test-interface;1.0 [test->default(compile)]
 [info] Resolving org.scala-sbt#test-interface;1.0 ...
-[debug] sbt-chain: Checking cache for: sbt.ivyint.MergedDescriptors@38159687
+[debug] sbt-chain: Checking cache for: sbt.ivyint.MergedDescriptors@1c838739
 [debug] sbt-chain: module revision found in cache: org.scala-sbt#test-interface;1.0
 [debug] 	found org.scala-sbt#test-interface;1.0 in sbt-chain
 [debug] == resolving dependencies jvican#chess$sources_javadoc_2.11;1.0->org.scala-sbt#test-interface;1.0 [test->runtime]
@@ -61,7 +61,7 @@
 [debug] == resolving dependencies jvican#chess$sources_javadoc_2.11;1.0->org.scala-sbt#test-interface;1.0 [test->master]
 [debug] == resolving dependencies jvican#chess$sources_javadoc_2.11;1.0->org.scalatest#scalatest_2.11;2.2.4 [test->default(compile)]
 [info] Resolving org.scalatest#scalatest_2.11;2.2.4 ...
-[debug] sbt-chain: Checking cache for: sbt.ivyint.MergedDescriptors@b269c9a
+[debug] sbt-chain: Checking cache for: sbt.ivyint.MergedDescriptors@7960bba8
 [debug] sbt-chain: module revision found in cache: org.scalatest#scalatest_2.11;2.2.4
 [debug] 	found org.scalatest#scalatest_2.11;2.2.4 in sbt-chain
 [debug] == resolving dependencies jvican#chess$sources_javadoc_2.11;1.0->org.scalatest#scalatest_2.11;2.2.4 [test->runtime]
@@ -69,7 +69,7 @@
 [debug] == resolving dependencies jvican#chess$sources_javadoc_2.11;1.0->org.scalatest#scalatest_2.11;2.2.4 [test->master]
 [debug] == resolving dependencies jvican#chess$sources_javadoc_2.11;1.0->org.scala-lang#scala-reflect;2.11.2 [test->default(compile)]
 [info] Resolving org.scala-lang#scala-reflect;2.11.2 ...
-[debug] sbt-chain: Checking cache for: sbt.ivyint.MergedDescriptors@7517e7f6
+[debug] sbt-chain: Checking cache for: sbt.ivyint.MergedDescriptors@632ba432
 [debug] sbt-chain: module revision found in cache: org.scala-lang#scala-reflect;2.11.2
 [debug] 	found org.scala-lang#scala-reflect;2.11.2 in sbt-chain
 [debug] 	[2.11.2] org.scala-lang#scala-reflect;2.11.2
@@ -78,7 +78,7 @@
 [debug] == resolving dependencies jvican#chess$sources_javadoc_2.11;1.0->org.scala-lang#scala-reflect;2.11.2 [test->master]
 [debug] == resolving dependencies jvican#chess$sources_javadoc_2.11;1.0->org.scala-lang.modules#scala-xml_2.11;1.0.2 [test->default(compile)]
 [info] Resolving org.scala-lang.modules#scala-xml_2.11;1.0.2 ...
-[debug] sbt-chain: Checking cache for: sbt.ivyint.MergedDescriptors@56557028
+[debug] sbt-chain: Checking cache for: sbt.ivyint.MergedDescriptors@4f851917
 [debug] sbt-chain: module revision found in cache: org.scala-lang.modules#scala-xml_2.11;1.0.2
 [debug] 	found org.scala-lang.modules#scala-xml_2.11;1.0.2 in sbt-chain
 [debug] == resolving dependencies jvican#chess$sources_javadoc_2.11;1.0->org.scala-lang.modules#scala-xml_2.11;1.0.2 [test->runtime]
@@ -266,7 +266,7 @@
 [debug] 	[NOT REQUIRED] org.scala-lang.modules#scala-parser-combinators_2.11;1.0.4!scala-parser-combinators_2.11.jar(src)
 [debug] 	[NOT REQUIRED] jline#jline;2.12.1!jline.jar(src)
 [debug] 	[NOT REQUIRED] jline#jline;2.12.1!jline.jar(doc)
-[debug] :: resolution report :: resolve 315ms :: artifacts dl 53ms
+[debug] :: resolution report :: resolve 437ms :: artifacts dl 71ms
 [debug] 	report for jvican#chess$sources_javadoc_2.11;1.0 compile produced in /home/turing/Code/Scalac/Chess/target/resolution-cache/reports/jvican-chess$sources_javadoc_2.11-compile.xml
 [debug] 	report for jvican#chess$sources_javadoc_2.11;1.0 runtime produced in /home/turing/Code/Scalac/Chess/target/resolution-cache/reports/jvican-chess$sources_javadoc_2.11-runtime.xml
 [debug] 	report for jvican#chess$sources_javadoc_2.11;1.0 test produced in /home/turing/Code/Scalac/Chess/target/resolution-cache/reports/jvican-chess$sources_javadoc_2.11-test.xml
@@ -280,4 +280,4 @@
 [debug] 	report for jvican#chess$sources_javadoc_2.11;1.0 docs produced in /home/turing/Code/Scalac/Chess/target/resolution-cache/reports/jvican-chess$sources_javadoc_2.11-docs.xml
 [debug] 	report for jvican#chess$sources_javadoc_2.11;1.0 pom produced in /home/turing/Code/Scalac/Chess/target/resolution-cache/reports/jvican-chess$sources_javadoc_2.11-pom.xml
 [debug] 	report for jvican#chess$sources_javadoc_2.11;1.0 scala-tool produced in /home/turing/Code/Scalac/Chess/target/resolution-cache/reports/jvican-chess$sources_javadoc_2.11-scala-tool.xml
-[debug] 	resolve done (315ms resolve - 53ms download)
+[debug] 	resolve done (437ms resolve - 71ms download)

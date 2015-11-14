@@ -758,9 +758,9 @@
 [debug] 	[NOT REQUIRED] org.scala-sbt#test-agent;0.13.8!test-agent.jar
 [debug] 	[NOT REQUIRED] org.scala-sbt#test-interface;1.0!test-interface.jar
 [debug] 	[NOT REQUIRED] org.scala-sbt#apply-macro;0.13.8!apply-macro.jar
-[debug] :: resolution report :: resolve 6581ms :: artifacts dl 114ms
+[debug] :: resolution report :: resolve 7368ms :: artifacts dl 152ms
 [debug] 	report for jvican#chess$sbt_2.11;1.0 default produced in /home/turing/Code/Scalac/Chess/target/resolution-cache/reports/jvican-chess$sbt_2.11-default.xml
-[debug] 	resolve done (6581ms resolve - 114ms download)
+[debug] 	resolve done (7368ms resolve - 152ms download)
 [debug] Using inline dependencies specified in Scala.
 [debug] :: resolving dependencies :: jvican#chess$sources_2.11;1.0
 [debug] 	confs: [default]
@@ -1153,6 +1153,6 @@
 [debug] 	[NOT REQUIRED] org.ensime#ensime-sbt;0.2.0!ensime-sbt.jar(src)
 [debug] 	[NOT REQUIRED] org.scalariform#sbt-scalariform;1.4.0!sbt-scalariform.jar(src)
 [debug] 	[NOT REQUIRED] org.scalariform#scalariform_2.10;0.1.6!scalariform_2.10.jar(src)
-[debug] :: resolution report :: resolve 523ms :: artifacts dl 81ms
+[debug] :: resolution report :: resolve 547ms :: artifacts dl 76ms
 [debug] 	report for jvican#chess$sources_2.11;1.0 default produced in /home/turing/Code/Scalac/Chess/target/resolution-cache/reports/jvican-chess$sources_2.11-default.xml
-[debug] 	resolve done (523ms resolve - 81ms download)
+[debug] 	resolve done (547ms resolve - 76ms download)

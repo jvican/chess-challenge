@@ -4,7 +4,7 @@
 		module="chess$sources_javadoc_2.11"
 		revision="1.0"
 		status="integration"
-		publication="20151112140441"
+		publication="20151114114352"
 	/>
 	<configurations>
 		<conf name="compile" visibility="public" description=""/>
