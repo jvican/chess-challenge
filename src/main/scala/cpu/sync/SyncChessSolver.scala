@@ -10,18 +10,18 @@ object SyncChessSolver {
       * from the search space when the piece
       * is placed in the board. Order:
       * Queen > Rook > Bishop > Knight > King */
-    val priority: Int
+    val difficulty: Int
 
     /** Return if the piece in `pos`
       * cannot take the piece in `target`.
       * Assume they are different cells. */
-    def isSafe(pos: Cell, target: Cell): Boolean
+    @inline def isSafe(pos: Cell, target: Cell): Boolean
   }
 
   import Math.abs
 
   case object Rook extends Piece {
-    val priority = 4
+    val difficulty = 4
 
     override def toString: String = "R"
     @inline def isSafe(pos: Cell, target: Cell) =
@@ -29,7 +29,7 @@ object SyncChessSolver {
   }
 
   case object King extends Piece {
-    val priority = 1
+    val difficulty = 1
 
     override def toString: String = "K"
     @inline def isSafe(pos: Cell, target: Cell) =
@@ -37,7 +37,7 @@ object SyncChessSolver {
   }
 
   case object Queen extends Piece {
-    val priority = 5
+    val difficulty = 5
 
     override def toString: String = "Q"
     @inline def isSafe(pos: Cell, target: Cell) =
@@ -45,7 +45,7 @@ object SyncChessSolver {
   }
 
   case object Bishop extends Piece {
-    val priority = 3
+    val difficulty = 3
 
     override def toString: String = "B"
     @inline def isSafe(pos: Cell, target: Cell) =
@@ -53,7 +53,7 @@ object SyncChessSolver {
   }
 
   case object Knight extends Piece {
-    val priority = 2
+    val difficulty = 2
 
     override def toString: String = "N"
     @inline def isSafe(pos: Cell, target: Cell) = {
@@ -87,13 +87,13 @@ object SyncChessSolver {
   type Move = (Piece, Cell)
 
   implicit class RichMove(val m: Move) extends AnyVal {
-    def piece = m._1
-    def cell = m._2
+    @inline def piece = m._1
+    @inline def cell = m._2
   }
 
   implicit class Board(val t: (Int, Int)) extends AnyVal {
-    def n = t._1
-    def m = t._1
+    @inline def n = t._1
+    @inline def m = t._1
   }
 
   /* It cannot be a value class because SIP-15 does
@@ -117,11 +117,11 @@ object SyncChessSolver {
    * of the solution. The methods `hashCode` and `equals` couldn't
    * be defined here because the specification SIP-15 forbids it. */
   implicit class RichDecision(val d: Decision) extends AnyVal {
-    def add(m: Move): Decision = m :: d.l
-    def isNotVisited(mem: Visited): Boolean = !mem.contains(d)
+    @inline def add(m: Move): Decision = m :: d.l
+    @inline def isNotVisited(mem: Visited): Boolean = !mem.contains(d)
 
     /* Checking for each piece if the new move is possible.*/
-    def isValidPosition(target: Move) = d.l forall { m =>
+    @inline def isValidPosition(target: Move) = d.l forall { m =>
       m.cell != target.cell &&
         m.piece.isSafe(m.cell, target.cell) &&
         /* This check is needed since the target piece may
@@ -169,7 +169,7 @@ object SyncChessSolver {
    * latest state in each iteration. It is not immutable because
    * there is now way to share it with each independent iteration. */
   def solve(cg: ChessGroups, dim: Board): Iterator[Decision] = {
-    val pieces = expand(cg).sortBy(_.priority)
+    val pieces = expand(cg).sortBy(_.difficulty)
     val mem = MutableSet.empty[Decision]
     pieces.tail.foldLeft(seed(pieces.head, dim)) {
       (decisions, piece) =>
@@ -180,8 +180,8 @@ object SyncChessSolver {
 
 object ChessApp extends App {
   import SyncChessSolver._
-  val problem = Vector((9, Queen))
-  val board = (9, 9)
+  val problem = Vector((7, Queen))
+  val board = (7, 7)
 
   val start = System.currentTimeMillis()
   val solutions = solve(problem, board).toVector

@@ -11,18 +11,18 @@ object AsyncChessSolver {
       * from the search space when the piece
       * is placed in the board. Order:
       * Queen > Rook > Bishop > Knight > King */
-    val priority: Int
+    val difficulty: Int
 
     /** Return if the piece in `pos`
       * cannot take the piece in `target`.
       * Assume they are different cells. */
-    def isSafe(pos: Cell, target: Cell): Boolean
+    @inline def isSafe(pos: Cell, target: Cell): Boolean
   }
 
   import Math.abs
 
   case object Rook extends Piece {
-    val priority = 4
+    val difficulty = 4
 
     override def toString: String = "R"
     @inline def isSafe(pos: Cell, target: Cell) =
@@ -30,7 +30,7 @@ object AsyncChessSolver {
   }
 
   case object King extends Piece {
-    val priority = 1
+    val difficulty = 1
 
     override def toString: String = "K"
     @inline def isSafe(pos: Cell, target: Cell) =
@@ -38,7 +38,7 @@ object AsyncChessSolver {
   }
 
   case object Queen extends Piece {
-    val priority = 5
+    val difficulty = 5
 
     override def toString: String = "Q"
     @inline def isSafe(pos: Cell, target: Cell) =
@@ -46,7 +46,7 @@ object AsyncChessSolver {
   }
 
   case object Bishop extends Piece {
-    val priority = 3
+    val difficulty = 3
 
     override def toString: String = "B"
     @inline def isSafe(pos: Cell, target: Cell) =
@@ -54,7 +54,7 @@ object AsyncChessSolver {
   }
 
   case object Knight extends Piece {
-    val priority = 2
+    val difficulty = 2
 
     override def toString: String = "N"
     @inline def isSafe(pos: Cell, target: Cell) = {
@@ -88,13 +88,13 @@ object AsyncChessSolver {
   type Move = (Piece, Cell)
 
   implicit class RichMove(val m: Move) extends AnyVal {
-    def piece = m._1
-    def cell = m._2
+    @inline def piece = m._1
+    @inline def cell = m._2
   }
 
   implicit class Board(val t: (Int, Int)) extends AnyVal {
-    def n = t._1
-    def m = t._1
+    @inline def n = t._1
+    @inline def m = t._1
   }
 
   /* It cannot be a value class because SIP-15 does
@@ -118,11 +118,11 @@ object AsyncChessSolver {
    * of the solution. The methods `hashCode` and `equals` couldn't
    * be defined here because the specification SIP-15 forbids it. */
   implicit class RichDecision(val d: Decision) extends AnyVal {
-    def add(m: Move): Decision = m :: d.l
-    def isNotVisited(mem: Visited): Boolean = !mem.contains(d)
+    @inline def add(m: Move): Decision = m :: d.l
+    @inline def isNotVisited(mem: Visited): Boolean = !mem.contains(d)
 
     /* Checking for each piece if the new move is possible.*/
-    def isValidPosition(target: Move) = d.l forall { m =>
+    @inline def isValidPosition(target: Move) = d.l forall { m =>
       m.cell != target.cell &&
         m.piece.isSafe(m.cell, target.cell) &&
         /* This check is needed since the target piece may
@@ -132,8 +132,8 @@ object AsyncChessSolver {
   }
 
   implicit class TrieMapLikeSet[T](val m: TrieMap[T, T]) extends AnyVal {
-    def contains(k: T): Boolean = m.contains(k)
-    def +=(e: T): Unit = m += ((e, e))
+    @inline def contains(k: T): Boolean = m.contains(k)
+    @inline def +=(e: T): Unit = m += ((e, e))
   }
 
   object TrieMapLikeSet {
@@ -174,7 +174,7 @@ object AsyncChessSolver {
 
   def solve(cg: ChessGroups, dim: Board)
            (implicit ec: ExecutionContext): Future[Vector[Decision]] = {
-    val pieces = expand(cg).sortBy(_.priority)
+    val pieces = expand(cg).sortBy(_.difficulty)
     val mem = TrieMapLikeSet.empty[Decision]
     val seeds = Vector.range(1, dim.n + 1) map ( i => Future {
       pieces.tail.foldLeft(seed(pieces.head, (i, dim.m))) {
@@ -189,8 +189,8 @@ object AsyncChessSolver {
 object ChessApp extends App {
 
   import AsyncChessSolver._
-  val problem = Vector((9, Queen))
-  val board = (9, 9)
+  val problem = Vector((7, Queen))
+  val board = (7, 9)
 
   import scala.concurrent.ExecutionContext.Implicits.global
   import scala.concurrent.duration._
