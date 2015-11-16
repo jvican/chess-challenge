@@ -1,7 +1,6 @@
 package chess.async
 
 import org.scalacheck.Gen
-import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{Matchers, PropSpec}
 
@@ -11,20 +10,22 @@ import org.scalatest.{Matchers, PropSpec}
   * generated. Fine-grained testing has been done for the specific examples
   * in the challenge. */
 class AsyncChessSolverSpec extends PropSpec with PropertyChecks
-                                               with Matchers with ScalaFutures {
+                                               with Matchers {
   import AsyncChessSolver._
 
   /** Checks that a vector of Decisions is a good solution for the problem. */
-  def corrector(solutions: Seq[Decision]): Seq[Boolean] =
-    solutions map { d2 =>
-      d2.l.tails.filter(_.nonEmpty).forall{
-        l => l.tail.forall(m => m.piece.isSafe(m.cell, l.head.cell))
+  def corrector(solutions: Seq[Decision]): Seq[(Decision,Boolean)] =
+    solutions map { d =>
+      d -> d.l.forall { m =>
+        d.l.forall(m2 =>
+          if(m2 != m) m.piece.isSafe(m.cell,m2.cell) else true
+        )
       }
     }
 
   def boardGen: Gen[Board] = for {
-    n <- Gen.choose[Int](3, 5)
-    m <- Gen.choose[Int](3, 5)
+    n <- Gen.choose[Int](3, 6)
+    m <- Gen.choose[Int](3, 6)
   } yield (n, m)
 
   def pieceGen: Gen[Piece] =
@@ -44,15 +45,23 @@ class AsyncChessSolverSpec extends PropSpec with PropertyChecks
   implicit override val generatorDrivenConfig =
     PropertyCheckConfig(minSize = 10, maxSize = 10, minSuccessful = 10)
 
+  import scala.concurrent.ExecutionContext.Implicits.global
+
   property("solve several chess problems") {
     forAll(problemGen) {
       t =>
         val (groups, b) = t
+        /* Debugging information */
         println(s"Groups $groups")
-        println(s"Board ${b.n}, ${b.m}")
-        /*corrector(solve(groups, b).run) foreach {
-          _ shouldBe true
-        }*/
+        println(s"Board ${b.n} ${b.m}")
+        solve(groups, b, stdout=false).run._2.toList match {
+          case l if l.nonEmpty =>
+            corrector(l) foreach ( t => {
+              t._2 shouldBe true
+            })
+          case _ => assert(true)
+        }
+
     }
   }
 }

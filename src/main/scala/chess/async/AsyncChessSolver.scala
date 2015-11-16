@@ -1,34 +1,36 @@
 package chess.async
 
-import scala.collection.concurrent.TrieMap
+import java.util.concurrent.ConcurrentHashMap
+
+import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext
 import scala.language.{implicitConversions, postfixOps}
 import scalaz.concurrent._
 
-trait ChessIO {
-  import java.io.{File, PrintWriter}
+/**
+  * Chess challenge -
+  * Find all the unique configurations of a given
+  * group of pieces in a Chess board without any
+  * one threatening each other.
+  *
+  * @author Jorge Vicente Cantero (jvican)
+  */
 
-  def printToFile(f: File)(op: PrintWriter => Unit) {
-    val p = new PrintWriter(f)
-    try { op(p) } finally { p.close() }
-  }
+object AsyncChessSolver {
 
-  def randomFile =
-    File.createTempFile("asd", ".result")
-}
+  type Cell = (Int, Int)
+  type Move = (Piece, Cell)
 
-object AsyncChessSolver extends ChessIO {
   sealed trait Piece {
     /** Assigned according to the number
-      * of possible moves that are removed
-      * from the search space when the piece
-      * is placed in the board. Order:
-      * Queen > Rook > Bishop > Knight > King */
+     * of possible moves that are removed
+     * from the search space when the piece
+     * is placed in the board. Order:
+     * Queen > Rook > Bishop > Knight > King */
     val difficulty: Int
 
-    /** Return if the piece in `pos`
-      * cannot take the piece in `target`.
-      * Assume they are different cells. */
+    /** Return if the piece in `pos` cannot take the piece
+     * in `target`. Assume they are different cells. */
     @inline def isSafe(pos: Cell, target: Cell): Boolean
   }
 
@@ -78,7 +80,9 @@ object AsyncChessSolver extends ChessIO {
     }
   }
 
-  type Cell = (Int, Int)
+  /* These are value classes to give a more idiomatic
+   * and clear way to call the fields of the tuples
+   * without case classes, eventually freeing allocations. */
 
   implicit class RichCell(val c: Cell) extends AnyVal {
     @inline def row = c._1
@@ -95,13 +99,6 @@ object AsyncChessSolver extends ChessIO {
     }
   }
 
-
-  /* These are value classes to give a more idiomatic
-   * and clear way to call the fields of the tuples
-   * without case classes, eventually freeing allocations. */
-
-  type Move = (Piece, Cell)
-
   implicit class RichMove(val m: Move) extends AnyVal {
     @inline def piece = m._1
     @inline def cell = m._2
@@ -115,7 +112,9 @@ object AsyncChessSolver extends ChessIO {
   /* It cannot be a value class because SIP-15 does
    * not allow them to define `hashCode` and `equals`.*/
   implicit class RichHashList[T](val l: List[T]) {
-    override def toString = l.toString()
+    def size = l.size
+    /* Default representation */
+    override def toString = l.mkString(" - ") + "\n"
     /* Override using an unorderedHash because using a `Set`
      * will cause bad performance and it is required to check
      * efficiently that two lists have the same positions. */
@@ -147,8 +146,6 @@ object AsyncChessSolver extends ChessIO {
       }
     }
 
-    override def toString: String = d.l.mkString(" - ")
-
     /* Print a decision in a pretty way, but it is a very
      * expensive operation. By default, use another representation. */
     def prettyPrint(b: Board): String = {
@@ -165,20 +162,23 @@ object AsyncChessSolver extends ChessIO {
     }
   }
 
+  /* Trick to save some memory. */
   val inhabitable = 0.toByte
 
-  implicit class TrieMapLikeSet[T](val m: TrieMap[T, Byte]) extends AnyVal {
+  /* Don't use `TrieMap`, `ConcurrentHashMap` is more efficient */
+  import scala.collection.concurrent.Map
+  implicit class ConcurrentMapLikeSet[T](val m: Map[T, Byte]) extends AnyVal {
     /* Return if a element is in the set. Thread-safe operation. */
     @inline def containsOrPut(e: T): Boolean =
       m.putIfAbsent(e, inhabitable).isEmpty
   }
 
-  object TrieMapLikeSet {
-    def empty[T]: TrieMapLikeSet[T] =
-      TrieMapLikeSet(TrieMap.empty[T, Byte])
+  object ConcurrentMapLikeSet {
+    def empty[T]: ConcurrentMapLikeSet[T] =
+      ConcurrentMapLikeSet(new ConcurrentHashMap[T, Byte]().asScala)
   }
 
-  type Visited = TrieMapLikeSet[Decision]
+  type Visited = ConcurrentMapLikeSet[Decision]
 
   /* For each decision, check all the possible moves, avoiding all the
    * paths that have already been taken before. Then, mark it as visited.*/
@@ -211,52 +211,54 @@ object AsyncChessSolver extends ChessIO {
   type ChessGroup = (Int, Piece)
   type ChessGroups = Seq[ChessGroup]
 
-  import java.io.File
+  /** Sort the pieces by difficulty. Place first the most difficult
+   * ones because they restrict more the possible movements in the
+   * board. Mark every taken path as visited in order to avoid
+   * try solutions with moves that have already been inspected.
+   * Store those paths in a **concurrent** Set in order to share the
+   * latest state in each iteration. This function returns a
+   * `Future[(Int, Iterator[Decision]]` with the total number
+   * of solutions. Note that the bottleneck of my solution
+   * is the `println` operation, as there is a lot of contention
+   * (because it is synchronized). If this print is removed or
+   * stdout is redirected to a file, the solution is given in less time. */
+  def solve(cg: ChessGroups, b: Board, stdout: Boolean = true)
+           (implicit ec: ExecutionContext): Future[(Int, Iterator[Decision])] = {
+    /* Ugly but necessary check. Avoid
+     * Either or Option to not pollute the API. */
+    require(cg.nonEmpty)
 
-  def solve(cg: ChessGroups, b: Board)
-           (implicit ec: ExecutionContext): Future[Int] = {
     val pieces = expand(cg).sortBy(_.difficulty).reverse
-    val mem = TrieMapLikeSet.empty[Decision]
-    val files = TrieMap.empty[Cell, File]
+    val mem = ConcurrentMapLikeSet.empty[Decision]
 
-    import java.io.PrintWriter
     val seeds = Vector.range(1, b.n + 1) map (r => Future {
-      //val cell = (r, c.col)
-      val outputFile = randomFile
-      //files.put(cell, outputFile)
-      val p = new PrintWriter(outputFile)
-      p.println(s"This is thread with assigned row $r")
-      val res = pieces.tail.foldLeft(seed(pieces.head, r, b.m)) {
+      pieces.tail.foldLeft(seed(pieces.head, r, b.m)) {
         (decisions, piece) =>
           decide(decisions, piece, mem, b)
-      }.map(d => {p.println(d); d}).foldLeft(0) (
-        (acc: Int, _: Decision) => acc + 1
-      )
-      p.close()
-      res
+      }.map(d => {if(stdout) println(d.toString); 1}).sum
     })
 
-    Future.gatherUnordered(seeds).map(_.sum)
+    Future.gatherUnordered(seeds).map(l =>
+      l.sum ->
+        /* In case anyone wants to iterate over the decisions */
+        mem.m.keysIterator.filter(_.size == pieces.size)
+    )
   }
 }
 
 object ChessApp extends App {
 
   import AsyncChessSolver._
-  //val problem = Vector((2, King), (2, Queen), (2, Bishop), (1, Knight))
-  val problem = Vector((2, King), (2, Queen))
-  val board = (7, 7)
+  val problem = Vector((2, Rook), (4, Knight))//, (2, Bishop), (1, Knight))
+  val board = (4, 4)
 
   import scala.concurrent.ExecutionContext.Implicits.global
-
-
   val start = System.currentTimeMillis()
-  val solutions = solve(problem, board)
-
-  val numSolutions = solutions.run
+  val solver = solve(problem, board, stdout=true)
+  val solutions = solver.run
   val end = System.currentTimeMillis()
   val runtime = end - start
 
-  println(s"Number of solutions: $numSolutions")
+  println(s"Number of solutions: ${solutions._1}")
   println(s"Runtime: ${runtime}ms")
 }
