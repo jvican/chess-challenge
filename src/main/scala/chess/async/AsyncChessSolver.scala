@@ -249,8 +249,8 @@ object AsyncChessSolver {
 object ChessApp extends App {
 
   import AsyncChessSolver._
-  val problem = Vector((2, Rook), (4, Knight))//, (2, Bishop), (1, Knight))
-  val board = (4, 4)
+  val problem = Vector((2, Rook), (4, Knight), (2, Bishop), (1, Knight))
+  val board = (7, 7)
 
   import scala.concurrent.ExecutionContext.Implicits.global
   val start = System.currentTimeMillis()
