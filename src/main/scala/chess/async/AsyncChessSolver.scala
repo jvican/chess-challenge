@@ -249,15 +249,22 @@ object AsyncChessSolver {
 object ChessApp extends App {
 
   import AsyncChessSolver._
-  val problem = Vector((2, Rook), (4, Knight), (2, Bishop), (1, Knight))
+  val problem = Vector((2, King), (2, Queen), (2, Bishop), (1, Knight))
   val board = (7, 7)
 
   import scala.concurrent.ExecutionContext.Implicits.global
   val start = System.currentTimeMillis()
-  val solver = solve(problem, board, stdout=true)
+  val solver = solve(problem, board, stdout=false)
   val solutions = solver.run
   val end = System.currentTimeMillis()
   val runtime = end - start
+
+  /* Print just the first 10 solutions. If one
+   * wants to print more, please use call the
+   * `solve` method with stdout=true. It is
+   * more efficient to print them as they are
+   * computed.*/
+  solutions._2.take(10).foreach(println)
 
   println(s"Number of solutions: ${solutions._1}")
   println(s"Runtime: ${runtime}ms")
