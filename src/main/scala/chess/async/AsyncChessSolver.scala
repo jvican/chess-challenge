@@ -162,8 +162,8 @@ object AsyncChessSolver {
     }
   }
 
-  /* Trick to save some memory. */
-  val inhabitable = 0.toByte
+  /* Trick to save some memory (important to be private and final). */
+  private final val inhabitable = 0.toByte
 
   /* Don't use `TrieMap`, `ConcurrentHashMap` is more efficient */
   import scala.collection.concurrent.Map
@@ -249,8 +249,8 @@ object AsyncChessSolver {
 object ChessApp extends App {
 
   import AsyncChessSolver._
-  val problem = Vector((2, King), (2, Queen), (2, Bishop), (1, Knight))
-  val board = (7, 7)
+  final val problem = Vector((2, King), (2, Queen), (2, Bishop), (1, Knight))
+  final val board = (7, 7)
 
   import scala.concurrent.ExecutionContext.Implicits.global
   val start = System.currentTimeMillis()
